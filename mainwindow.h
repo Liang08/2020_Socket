@@ -29,6 +29,7 @@ public slots:
     void recvMessageFrom2();
     void landLordNo();
     void landLordYes();
+    void chooseCard(int n);
 
 
 private:
@@ -45,6 +46,7 @@ private:
     std::vector<int> card[3];                //card[i]  player_i的牌    
     std::vector<int> card_0;                 //地主牌
     void drawCard();
+    void drawCardAgain();
     void seizingLandlords(int n);
     void decidedLandlord();
     int landlord[3] = {0, 0, 0};

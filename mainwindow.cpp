@@ -8,6 +8,7 @@
 #include <QTime>
 #include <algorithm>
 #include <QPixmap>
+#include <QThread>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -25,6 +26,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->pushButton, SIGNAL(clicked()), this, SLOT(initServer()));
     connect(ui->pushButtonNo, SIGNAL(clicked()), this, SLOT(landLordNo()));
     connect(ui->pushButtonYes, SIGNAL(clicked()), this, SLOT(landLordYes()));
+    connect(ui->labelCard, SIGNAL(chooseCard(int)), this, SLOT(chooseCard(int)));
 }
 
 MainWindow::~MainWindow()
@@ -378,8 +380,67 @@ void MainWindow::drawCard(){
         }
         labels[num] = new QLabel(ui->labelCard);
         labels[num]->setPixmap(QPixmap(QString(":/png/cards/%1%2.png").arg(color).arg(value)).scaled(w,h-60,Qt::KeepAspectRatio));
-        labels[num]->move(30 * num, 20);
+        labels[num]->move(30 * num, 20 - 20 * player.playCards[num].choosed);
         labels[num]->show();
+        num ++;
+    }
+}
+
+
+void MainWindow::drawCardAgain(){
+    QString color, value;
+    int num = 0;
+    int w = ui->labelCard->width();
+    int h = ui->labelCard->height();
+    for(auto a : player){
+        if(a.getValue() <= 7){
+            value = QString::number(a.getValue() + 3);
+        }else{
+            switch (a.getValue()){
+            case 8:
+                value = "J";
+                break;
+            case 9:
+                value = "Q";
+                break;
+            case 10:
+                value = "K";
+                break;
+            case 11:
+                value = "1";
+                break;
+            case 12:
+                value = "2";
+                break;
+            case 13:
+                color = "BLACK";
+                value = " JOKER";
+                break;
+            default:
+                color = "RED";
+                value = " JOKER";
+                break;
+            }
+        }
+        if (a.getValue() < 13){
+            switch (a.getColor()) {
+            case 0:
+                color = "C";
+                break;
+            case 1:
+                color = "D";
+                break;
+            case 2:
+                color = "H";
+                break;
+            default:
+                color = "S";
+                break;
+            }
+        }
+        labels[num]->move(30 * num, 20 - 20 * player.playCards[num].choosed);
+        if(player.playCards[num].exist == 0)
+            labels[num]->setVisible(0);
         num ++;
     }
 }
@@ -603,3 +664,7 @@ void MainWindow::decidedLandlord(){
 }
 
 
+void MainWindow::chooseCard(int n){
+    player.playCards[n].choosed = 1 - player.playCards[n].choosed;
+    drawCardAgain();
+}

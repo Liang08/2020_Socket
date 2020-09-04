@@ -20,12 +20,14 @@ SOURCES += \
     clientwindow.cpp \
     main.cpp \
     mainwindow.cpp \
+    mylabel.cpp \
     playercard.cpp
 
 HEADERS += \
     card.h \
     clientwindow.h \
     mainwindow.h \
+    mylabel.h \
     playercard.h
 
 FORMS += \

@@ -12,6 +12,8 @@ class Card
 public:
     Card();
     Card(int i);
+    int choosed = 0;
+    int exist = 1;
     friend bool operator> (Card c1, Card c2);
     friend bool operator< (Card c1, Card c2);
     int getColor();
