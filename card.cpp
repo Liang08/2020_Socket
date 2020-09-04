@@ -9,6 +9,7 @@ Card::Card()
 Card::Card(int i){
     num = i;
     setValue();
+    setColor();
 }
 
 
@@ -25,8 +26,18 @@ void Card::setValue(){
 }
 
 
+void Card::setColor(){
+    color = num % 4;
+}
+
+
 int Card::getValue(){
     return value;
+}
+
+
+int Card::getColor(){
+    return color;
 }
 
 
