@@ -13,6 +13,7 @@ public:
     Card();
     Card(int i);
     friend bool operator> (Card c1, Card c2);
+    friend bool operator< (Card c1, Card c2);
     int getColor();
     int getNum();
     int getValue();

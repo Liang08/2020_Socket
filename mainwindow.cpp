@@ -35,7 +35,6 @@ MainWindow::~MainWindow()
 
 //生成初始牌面
 void MainWindow::init(){
-    std::vector<int> card_0;
     for(int i = 0; i < 54; i ++){
         card_0.push_back(i);
     }
@@ -80,7 +79,9 @@ void MainWindow::init(){
         }
     }
     writeMessageTo1(&arr[0]);
+    tcpSocket_1->waitForBytesWritten();
     writeMessageTo2(&arr[1]);
+    tcpSocket_2->waitForBytesWritten();
 
 
     for(int i = 0; i < 3; i ++){
@@ -93,7 +94,6 @@ void MainWindow::init(){
     qsrand(time.msec()+time.second()*1000);
     int n = qrand() % 3;
     seizingLandlords(n);
-
 }
 
 
@@ -206,7 +206,7 @@ void MainWindow::recvMessageFrom1(){
              int struct_size, total_size;
              struct_size = 3;
              arr.append(4);
-             arr.append('1');
+             arr.append(1);
              arr.append(datas[1]);
              total_size = arr.size();
              QByteArray data;
@@ -222,16 +222,20 @@ void MainWindow::recvMessageFrom1(){
                      ui->labelPlayerStatus->setText("农民");
                      ui->labelPlayerstatus1->setText("地主");
                      ui->labelPlayerstatus2->setText("农民");
+                     isLandLord = 1;
 
                  }else if(landlord[0] == 1){
                      ui->labelPlayerStatus->setText("地主");
                      ui->labelPlayerstatus1->setText("农民");
                      ui->labelPlayerstatus2->setText("农民");
+                     isLandLord = 0;
                  }else{
                      ui->labelPlayerStatus->setText("农民");
                      ui->labelPlayerstatus1->setText("农民");
                      ui->labelPlayerstatus2->setText("地主");
+                     isLandLord = 2;
                  }
+                 decidedLandlord();
              }
              break;
          }
@@ -280,7 +284,7 @@ void MainWindow::recvMessageFrom2(){
             int struct_size, total_size;
             struct_size = 3;
             arr.append(4);
-            arr.append('2');
+            arr.append(2);
             arr.append(datas[1]);
             total_size = arr.size();
             QByteArray data;
@@ -296,16 +300,19 @@ void MainWindow::recvMessageFrom2(){
                     ui->labelPlayerStatus->setText("农民");
                     ui->labelPlayerstatus1->setText("农民");
                     ui->labelPlayerstatus2->setText("地主");
-
+                    isLandLord = 2;
                 }else if(landlord[1] == 1){
                     ui->labelPlayerStatus->setText("农民");
                     ui->labelPlayerstatus1->setText("地主");
                     ui->labelPlayerstatus2->setText("农民");
+                    isLandLord = 1;
                 }else{
                     ui->labelPlayerStatus->setText("地主");
                     ui->labelPlayerstatus1->setText("农民");
                     ui->labelPlayerstatus2->setText("农民");
+                    isLandLord = 0;
                 }
+                decidedLandlord();
             }
             break;
         }
@@ -406,16 +413,20 @@ void MainWindow::landLordNo(){
             ui->labelPlayerStatus->setText("地主");
             ui->labelPlayerstatus1->setText("农民");
             ui->labelPlayerstatus2->setText("农民");
+            isLandLord = 0;
 
         }else if(landlord[2] == 1){
             ui->labelPlayerStatus->setText("农民");
             ui->labelPlayerstatus1->setText("农民");
             ui->labelPlayerstatus2->setText("地主");
+            isLandLord = 2;
         }else{
             ui->labelPlayerStatus->setText("农民");
             ui->labelPlayerstatus1->setText("地主");
             ui->labelPlayerstatus2->setText("农民");
+            isLandLord = 1;
         }
+        decidedLandlord();
     }
 }
 
@@ -446,15 +457,143 @@ void MainWindow::landLordYes(){
             ui->labelPlayerStatus->setText("地主");
             ui->labelPlayerstatus1->setText("农民");
             ui->labelPlayerstatus2->setText("农民");
+            isLandLord = 0;
 
         }else if(landlord[2] == 1){
             ui->labelPlayerStatus->setText("农民");
             ui->labelPlayerstatus1->setText("农民");
             ui->labelPlayerstatus2->setText("地主");
+            isLandLord = 2;
         }else{
             ui->labelPlayerStatus->setText("农民");
             ui->labelPlayerstatus1->setText("地主");
             ui->labelPlayerstatus2->setText("农民");
+            isLandLord = 1;
         }
+        decidedLandlord();
     }
+}
+
+
+void MainWindow::decidedLandlord(){
+    for(int i = 0; i < 3; i ++){
+        landLordCard.playCards.push_back(Card(card_0[i]));
+    }
+    QString color, value;
+    int num = 0;
+    int w = ui->labelCard_0->width();
+    int h = ui->labelCard_0->height();
+    for(auto a : landLordCard){
+        if(a.getValue() <= 7){
+            value = QString::number(a.getValue() + 3);
+        }else{
+            switch (a.getValue()){
+            case 8:
+                value = "J";
+                break;
+            case 9:
+                value = "Q";
+                break;
+            case 10:
+                value = "K";
+                break;
+            case 11:
+                value = "1";
+                break;
+            case 12:
+                value = "2";
+                break;
+            case 13:
+                color = "BLACK";
+                value = " JOKER";
+                break;
+            default:
+                color = "RED";
+                value = " JOKER";
+                break;
+            }
+        }
+        if (a.getValue() < 13){
+            switch (a.getColor()) {
+            case 0:
+                color = "C";
+                break;
+            case 1:
+                color = "D";
+                break;
+            case 2:
+                color = "H";
+                break;
+            default:
+                color = "S";
+                break;
+            }
+        }
+        labelLandlord[num]->setPixmap(QPixmap(QString(":/png/cards/%1%2.png").arg(color).arg(value)).scaled(w,h,Qt::KeepAspectRatio));
+        num ++;
+    }
+    if(isLandLord == 0){
+        for(int i = 0; i < 3; i ++){
+            player.playCards.push_back(Card(card_0[i]));
+        }
+        sort(player.begin(), player.end());
+        drawCard();
+        QByteArray arr;
+        int struct_size, total_size;
+        struct_size = 2;
+        arr.append(5);
+        arr.append('0');
+        total_size = arr.size();
+        QByteArray data;
+        data.append(total_size).append(struct_size);
+        for(int i = 0; i < struct_size; i ++){
+            data.append(arr[i]);
+        }
+        writeMessageTo1(&data);
+        writeMessageTo2(&data);
+    }else if(isLandLord == 1){
+        QByteArray arr;
+        int struct_size, total_size;
+        struct_size = 2;
+        arr.append(5);
+        arr.append(1);
+        total_size = arr.size();
+        QByteArray data;
+        data.append(total_size).append(struct_size);
+        for(int i = 0; i < struct_size; i ++){
+            data.append(arr[i]);
+        }
+        writeMessageTo1(&data);
+        writeMessageTo2(&data);
+    }else{
+        QByteArray arr;
+        int struct_size, total_size;
+        struct_size = 2;
+        arr.append(5);
+        arr.append(2);
+        total_size = arr.size();
+        QByteArray data;
+        data.append(total_size).append(struct_size);
+        for(int i = 0; i < struct_size; i ++){
+            data.append(arr[i]);
+        }
+        writeMessageTo1(&data);
+        writeMessageTo2(&data);
+
+    }
+    QByteArray arr_2;
+    int struct_size_2, total_size_2;
+    struct_size_2 = 4;
+    arr_2.append(6);
+    for(int i = 0; i < 3; i ++){
+        arr_2.append(card_0[i]);
+    }
+    total_size_2 = arr_2.size();
+    QByteArray data_2;
+    data_2.append(total_size_2).append(struct_size_2);
+    for(int i = 0; i < struct_size_2; i ++){
+        data_2.append(arr_2[i]);
+    }
+    writeMessageTo1(&data_2);
+    writeMessageTo1(&data_2);
 }

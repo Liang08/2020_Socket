@@ -2,6 +2,7 @@
 #include "ui_clientwindow.h"
 #include "card.h"
 #include <QDebug>
+#include <algorithm>
 
 ClientWindow::ClientWindow(QString name_0, QWidget *parent) :
     QMainWindow(parent),
@@ -18,9 +19,11 @@ ClientWindow::ClientWindow(QString name_0, QWidget *parent) :
     connect(ui->pushButtonNo, SIGNAL(clicked()), this, SLOT(landLordNo()));
     connect(ui->pushButtonYes, SIGNAL(clicked()), this, SLOT(landLordYes()));
     if(Name == "Player_1"){
+        id = 1;
         ui->labelPlayer1->setText("玩家2");
         ui->labelPlayer2->setText("玩家0");
     }else{
+        id = 2;
         ui->labelPlayer1->setText("玩家0");
         ui->labelPlayer2->setText("玩家1");
     }
@@ -127,6 +130,108 @@ void ClientWindow::recvMessage(){
                          ui->labelPlayerstatus2->setText("抢地主");
                  }
              }
+             break;
+         case 5:
+             if(Name == "Player_1"){
+                 if(datas[1] == '0'){
+                     ui->labelPlayerStatus->setText("农民");
+                     ui->labelPlayerstatus1->setText("农民");
+                     ui->labelPlayerstatus2->setText("地主");
+                     isLandLord = 0;
+
+                 }else if(datas[1] == 1){
+                     ui->labelPlayerStatus->setText("地主");
+                     ui->labelPlayerstatus1->setText("农民");
+                     ui->labelPlayerstatus2->setText("农民");
+                     isLandLord = 1;
+                 }else{
+                     ui->labelPlayerStatus->setText("农民");
+                     ui->labelPlayerstatus1->setText("地主");
+                     ui->labelPlayerstatus2->setText("农民");
+                     isLandLord = 2;
+                 }
+             }if(Name == "Player_2"){
+                 if(datas[1] == '0'){
+                     ui->labelPlayerStatus->setText("农民");
+                     ui->labelPlayerstatus1->setText("地主");
+                     ui->labelPlayerstatus2->setText("农民");
+                     isLandLord = 0;
+                 }else if(datas[1] == 1){
+                     ui->labelPlayerStatus->setText("农民");
+                     ui->labelPlayerstatus1->setText("农民");
+                     ui->labelPlayerstatus2->setText("地主");
+                     isLandLord = 1;
+                 }else{
+                     ui->labelPlayerStatus->setText("地主");
+                     ui->labelPlayerstatus1->setText("农民");
+                     ui->labelPlayerstatus2->setText("农民");
+                     isLandLord = 2;
+                 }
+             }
+             break;
+         case 6:
+             if(isLandLord == id){
+                 for(int i = 0; i < 3; i ++){
+                     player.playCards.push_back(Card(int(datas[i + 1])));
+                     landLordCard.playCards.push_back(Card(int(datas[i + 1])));
+                 }
+                 sort(player.begin(), player.end());
+                 QString color, value;
+                 int num = 0;
+                 int w = ui->labelCard_0->width();
+                 int h = ui->labelCard_0->height();
+                 for(auto a : landLordCard){
+                     if(a.getValue() <= 7){
+                         value = QString::number(a.getValue() + 3);
+                     }else{
+                         switch (a.getValue()){
+                         case 8:
+                             value = "J";
+                             break;
+                         case 9:
+                             value = "Q";
+                             break;
+                         case 10:
+                             value = "K";
+                             break;
+                         case 11:
+                             value = "1";
+                             break;
+                         case 12:
+                             value = "2";
+                             break;
+                         case 13:
+                             color = "BLACK";
+                             value = " JOKER";
+                             break;
+                         default:
+                             color = "RED";
+                             value = " JOKER";
+                             break;
+                         }
+                     }
+                     if (a.getValue() < 13){
+                         switch (a.getColor()) {
+                         case 0:
+                             color = "C";
+                             break;
+                         case 1:
+                             color = "D";
+                             break;
+                         case 2:
+                             color = "H";
+                             break;
+                         default:
+                             color = "S";
+                             break;
+                         }
+                     }
+                     labelLandlord[num]->setPixmap(QPixmap(QString(":/png/cards/%1%2.png").arg(color).arg(value)).scaled(w,h-60,Qt::KeepAspectRatio));
+                     num ++;
+                 }
+             }
+
+             break;
          default:
              break;
          }

@@ -39,10 +39,14 @@ private:
     PlayerCard player;
     QLabel* labels[20];
     QByteArray m_buffer_car;
+    int isLandLord;
+    PlayerCard landLordCard;
     QLabel* labelLandlord[3];
-    std::vector<int> card[3];                //card[i]  player_i的牌
+    std::vector<int> card[3];                //card[i]  player_i的牌    
+    std::vector<int> card_0;                 //地主牌
     void drawCard();
     void seizingLandlords(int n);
+    void decidedLandlord();
     int landlord[3] = {0, 0, 0};
 
 };

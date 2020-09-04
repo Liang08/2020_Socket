@@ -44,3 +44,8 @@ int Card::getColor(){
 bool operator>(Card c1, Card c2){
     return c1.getNum() > c2.getNum();
 }
+
+
+bool operator<(Card c1, Card c2){
+    return c1.getNum() < c2.getNum();
+}
