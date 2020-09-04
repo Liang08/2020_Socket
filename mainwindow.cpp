@@ -419,10 +419,12 @@ void MainWindow::landLordNo(){
             ui->labelPlayerStatus->setText("农民");
             ui->labelPlayerstatus1->setText("农民");
             ui->labelPlayerstatus2->setText("地主");
+            ui->labelPlayerCard2->setText("20");
             isLandLord = 2;
         }else{
             ui->labelPlayerStatus->setText("农民");
             ui->labelPlayerstatus1->setText("地主");
+            ui->labelPlayerCard1->setText("20");
             ui->labelPlayerstatus2->setText("农民");
             isLandLord = 1;
         }
@@ -463,10 +465,12 @@ void MainWindow::landLordYes(){
             ui->labelPlayerStatus->setText("农民");
             ui->labelPlayerstatus1->setText("农民");
             ui->labelPlayerstatus2->setText("地主");
+            ui->labelPlayerCard2->setText("20");
             isLandLord = 2;
         }else{
             ui->labelPlayerStatus->setText("农民");
             ui->labelPlayerstatus1->setText("地主");
+            ui->labelPlayerCard1->setText("20");
             ui->labelPlayerstatus2->setText("农民");
             isLandLord = 1;
         }
@@ -595,5 +599,7 @@ void MainWindow::decidedLandlord(){
         data_2.append(arr_2[i]);
     }
     writeMessageTo1(&data_2);
-    writeMessageTo1(&data_2);
+    writeMessageTo2(&data_2);
 }
+
+
