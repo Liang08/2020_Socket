@@ -49,7 +49,7 @@ private:
     void drawCardAgain();
     void gameStart();
     void giveCard(int n);
-    void judgeCard();
+    void judgeCard(int *n, int num);
     void seizingLandlords(int n);
     void decidedLandlord();
     int cardcount[3] = {17, 17, 17};

@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <QPixmap>
 #include <QThread>
+#include <memory>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -195,7 +196,9 @@ void MainWindow::recvMessageFrom1(){
          for (int i = 0; i < struct_count; i ++) {
              datas.push_back(m_buffer_car[i + 2]);
          }
-
+         arr = m_buffer_car.right(total_length - total_bytes - 2);
+         total_length = arr.size();
+         m_buffer_car = arr;
          if(datas[0] == 1){
              if(datas[1] == 2){
                  landlord[1] = 2;
@@ -241,9 +244,16 @@ void MainWindow::recvMessageFrom1(){
              }
              break;
          }
-         arr = m_buffer_car.right(total_length - total_bytes - 2);
-         total_length = arr.size();
-         m_buffer_car = arr;
+         else if(datas[0] == 2){
+             if(struct_count == 1){
+                 qDebug() << "nocard";
+             }
+             else{
+                 for (int i = 1; i < struct_count; i ++) {
+
+                 }
+             }
+         }
      }
 }
 
@@ -658,6 +668,102 @@ void MainWindow::giveCard(int n){
 }
 
 
-void MainWindow::judgeCard(){
-
+void MainWindow::judgeCard(int *card, int num){
+    int n[3];
+    if(num == 1){
+        n[0] = 1;
+        n[1] = 0;
+        n[2] = card[0];
+    }else if(num == 2 && card[0] == 13 && card[1] == 14){
+        n[0] = 2;
+        n[1] = 1;
+        n[2] = 0;
+    }
+    else if(card[0] == card[num - 1]){
+        if(num == 2){
+            n[0] = 2;
+            n[1] = 0;
+            n[2] = card[0];
+        }else if(num == 3){
+            n[0] = 3;
+            n[1] = 0;
+            n[2] = card[0];
+        }else if(num == 4){
+            n[0] = 4;
+            n[1] = 0;
+            n[2] = card[0];
+        }
+    }
+    else if(num == 4 && (card[0] == card[2] || card[1] == card[3])){
+        n[0] = 3;
+        n[1] = 1;
+        if(card[0] == card[2])
+            n[2] = card[0];
+        else
+            n[2] = card[1];
+    }
+    else{
+        std::vector<int> a[4];
+        int count[15];
+        memset(count, 0, sizeof(count));
+        for(int i = 0; i < num; i ++){
+            count[card[i]] ++;
+        }
+        for(int i = 0; i < 15; i ++){
+            if(count[i] > 0){
+                a[count[i] - 1].push_back(i);
+            }
+        }
+        if(num == 5 && a[2].size() == 1 && a[1].size() == 1){
+            n[0] = 3;
+            n[1] = 0;
+            n[2] = a[2][1];
+        }
+        else if(num == 6 && a[3].size() == 1){
+            if(a[0].size() == 2){
+                n[0] = 4;
+                n[1] = 1;
+                n[2] = a[3][0];
+            }else if(a[1].size() == 1){
+                n[0] = 4;
+                n[1] = 2;
+                n[2] = a[3][0];
+            }
+        }
+        else if(num == 8 && a[3].size() == 1 && a[1].size() == 2){
+            n[0] = 4;
+            n[1] = 3;
+            n[2] = a[3][0];
+        }
+        else if(num >= 5 && a[0].size() == num && a[0][num - 1] < 12 && a[0][num - 1] - *a[0].begin()== num - 1){
+            n[0] = 5;
+            n[1] = num;
+            n[2] = a[0][0];
+        }
+        else if(num >= 6 && num % 2 == 0 && a[1].size() == num / 2 && a[1][num / 2 - 1] < 12 && a[1][num / 2 - 1] - *a[1].begin()  == num / 2 - 1){
+            n[0] = 6;
+            n[1] = num / 2;
+            n[2] = a[1][0];
+        }
+        else if(num >= 6 && num % 3 == 0 && a[2].size() == num / 3 && a[2][num / 3 - 1] < 12 && a[2][num / 3 - 1] - a[2][0] == num / 3 - 1){
+            n[0] = 7;
+            n[1] = num / 3;
+            n[2] = a[2][0];
+        }
+        else if(num >= 8 && num % 4 == 0 && a[2].size() == num / 4 && a[2][num / 4 - 1] < 12 && a[2][num / 4 - 1] - a[2][0] == num / 4 - 1){
+            n[0] = 8;
+            n[1] = num / 4;
+            n[2] = a[2][0];
+        }
+        else if(num >= 10 && num % 5 == 0 && a[2].size() == num / 5 && a[1].size() == num / 5 && a[2][num / 5 - 1] < 12 && a[2][num / 5 - 1] - a[2][0] == num / 5 - 1){
+            n[0] = 9;
+            n[1] = num / 5;
+            n[2] = a[2][0];
+        }
+        else{
+            n[0] = 10;
+            n[1] = 0;
+            n[2] = 0;
+        }
+    }
 }

@@ -19,6 +19,8 @@ ClientWindow::ClientWindow(QString name_0, QWidget *parent) :
     connect(ui->pushButtonNo, SIGNAL(clicked()), this, SLOT(landLordNo()));
     connect(ui->pushButtonYes, SIGNAL(clicked()), this, SLOT(landLordYes()));
     connect(ui->labelCard, SIGNAL(chooseCard(int)), this, SLOT(chooseCard(int)));
+    connect(ui->pushButtonOut, SIGNAL(clicked()), this, SLOT(giveCard()));
+    connect(ui->pushButtonNoCard, SIGNAL(clicked()), this, SLOT(noCard()));
     if(Name == "Player_1"){
         id = 1;
         ui->labelPlayer1->setText("玩家2");
@@ -431,4 +433,40 @@ void ClientWindow::landLordYes(){
 void ClientWindow::chooseCard(int n){
     player.playCards[n].choosed = 1 - player.playCards[n].choosed;
     drawCardAgain();
+}
+
+
+void ClientWindow::giveCard(){
+    QByteArray arr;
+    int struct_size, total_size;
+    struct_size = 1;
+    arr.append(2);
+    for(auto a : player){
+        if(a.choosed == 1 && a.exist == 1){
+            arr.append(a.getNum());
+            struct_size ++;
+        }
+    }
+    total_size = arr.size();
+    QByteArray data;
+    data.append(total_size).append(struct_size);
+    for(int i = 0; i < struct_size; i ++){
+        data.append(arr[i]);
+    }
+    writeMessage(&data);
+}
+
+
+void ClientWindow::noCard(){
+    QByteArray arr;
+    int struct_size, total_size;
+    struct_size = 1;
+    arr.append(2);
+    total_size = arr.size();
+    QByteArray data;
+    data.append(total_size).append(struct_size);
+    for(int i = 0; i < struct_size; i ++){
+        data.append(arr[i]);
+    }
+    writeMessage(&data);
 }

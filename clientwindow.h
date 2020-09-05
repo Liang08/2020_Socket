@@ -36,6 +36,8 @@ public slots:
     void landLordNo();
     void landLordYes();
     void chooseCard(int i);
+    void giveCard();
+    void noCard();
 
 private:
     Ui::ClientWindow *ui;
