@@ -21,6 +21,7 @@ SOURCES += \
     main.cpp \
     mainwindow.cpp \
     mylabel.cpp \
+    mythread.cpp \
     playercard.cpp
 
 HEADERS += \
@@ -28,6 +29,7 @@ HEADERS += \
     clientwindow.h \
     mainwindow.h \
     mylabel.h \
+    mythread.h \
     playercard.h
 
 FORMS += \

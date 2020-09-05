@@ -162,14 +162,15 @@ void MainWindow::acceptConnection(){
 
 void MainWindow::writeMessageTo1(QByteArray *array){
     tcpSocket_1->write(array->data());
-
     tcpSocket_1->waitForBytesWritten();
+    QThread::msleep(50);
 }
 
 
 void MainWindow::writeMessageTo2(QByteArray *array){
      tcpSocket_2->write(array->data());
      tcpSocket_2->waitForBytesWritten();
+     QThread::msleep(50);
 
 }
 
@@ -245,13 +246,31 @@ void MainWindow::recvMessageFrom1(){
              break;
          }
          else if(datas[0] == 2){
+             int flag = 1;
              if(struct_count == 1){
-                 qDebug() << "nocard";
+                 if(cardsClass[0] == 0)
+                     flag = 0;
              }
              else{
+                 receivedCards.clear();
                  for (int i = 1; i < struct_count; i ++) {
-
+                     receivedCards.push_back(int(datas[i]));
+                     receivedValue.push_back(checkAmount(datas[i]));
                  }
+                 flag = judgeCard(receivedCards, receivedCards.size());
+             }
+             if(flag == 0){
+                 QByteArray arr;
+                 int struct_size, total_size;
+                 struct_size = 1;
+                 arr.append(7);
+                 total_size = arr.size();
+                 QByteArray data;
+                 data.append(total_size).append(struct_size);
+                 data.append(arr[0]);
+                 writeMessageTo1(&data);
+             }else{
+
              }
          }
      }
@@ -327,7 +346,33 @@ void MainWindow::recvMessageFrom2(){
             }
             break;
         }
-    }
+         else if(datas[0] == 2){
+             int flag = 1;
+             if(struct_count == 1){
+                 if(cardsClass[0] == 0)
+                     flag = 0;
+             }
+             else{
+                 receivedCards.clear();
+                 for (int i = 1; i < struct_count; i ++) {
+                     receivedCards.push_back(int(datas[i]));
+                     receivedValue.push_back(checkAmount(datas[i]));
+                 }
+                 flag = judgeCard(receivedCards, receivedCards.size());
+             }
+             if(flag == 0){
+                 QByteArray arr;
+                 int struct_size, total_size;
+                 struct_size = 1;
+                 arr.append(7);
+                 total_size = arr.size();
+                 QByteArray data;
+                 data.append(total_size).append(struct_size);
+                 data.append(arr[0]);
+                 writeMessageTo2(&data);
+             }
+         }
+     }
 }
 
 
@@ -632,7 +677,9 @@ void MainWindow::decidedLandlord(){
         data.append(arr[i]);
     }
     writeMessageTo1(&data);
+    QThread::msleep(20);
     writeMessageTo2(&data);
+    QThread::msleep(20);
     gameStart();
 }
 
@@ -668,16 +715,16 @@ void MainWindow::giveCard(int n){
 }
 
 
-void MainWindow::judgeCard(int *card, int num){
+int MainWindow::judgeCard(std::vector<int>card, int num){
     int n[3];
     if(num == 1){
         n[0] = 1;
         n[1] = 0;
         n[2] = card[0];
     }else if(num == 2 && card[0] == 13 && card[1] == 14){
-        n[0] = 2;
-        n[1] = 1;
-        n[2] = 0;
+        n[0] = 4;
+        n[1] = 0;
+        n[2] = 13;
     }
     else if(card[0] == card[num - 1]){
         if(num == 2){
@@ -766,4 +813,21 @@ void MainWindow::judgeCard(int *card, int num){
             n[2] = 0;
         }
     }
+    if((n[0] == cardsClass[0] && n[1] == cardsClass[1] && n[2] > cardsClass[2]) || (cardsClass[0] == 0 && cardsClass[1] == 0 && cardsClass[2] == 0 && n[0] != 10) || (n[0] == 4 && n[1] == 0 && (cardsClass[0] != 4 || cardsClass[1] != 0 || cardsClass[2] < n[2]))){
+        cardsClass[0] = n[0];
+        cardsClass[1] = n[1];
+        cardsClass[2] = n[2];
+        return 1;
+    }
+    else
+        return 0;
+}
+
+
+int MainWindow::checkAmount(int card){
+    if(card < 53){
+        return card / 4;
+    }
+    else
+        return 14;
 }

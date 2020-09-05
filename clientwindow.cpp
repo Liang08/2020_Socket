@@ -256,6 +256,10 @@ void ClientWindow::recvMessage(){
              ui->pushButtonOut->setVisible(1);
              break;
 
+         case 7:
+             ui->labelMessage->setText("非法出牌");
+             break;
+
          default:
              break;
          }

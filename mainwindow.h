@@ -45,15 +45,19 @@ private:
     QLabel* labelLandlord[3];
     std::vector<int> card[3];                //card[i]  player_i的牌    
     std::vector<int> card_0;                 //地主牌
+    std::vector<int> receivedCards;
+    std::vector<int> receivedValue;
+    int cardsClass[3] = {0, 0, 0};
     void drawCard();
     void drawCardAgain();
     void gameStart();
     void giveCard(int n);
-    void judgeCard(int *n, int num);
+    int judgeCard(std::vector<int> n, int num);
     void seizingLandlords(int n);
     void decidedLandlord();
     int cardcount[3] = {17, 17, 17};
     int landlord[3] = {0, 0, 0};
+    int checkAmount(int card);
 
 };
 #endif // MAINWINDOW_H
