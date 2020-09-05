@@ -47,8 +47,12 @@ private:
     std::vector<int> card_0;                 //地主牌
     void drawCard();
     void drawCardAgain();
+    void gameStart();
+    void giveCard(int n);
+    void judgeCard();
     void seizingLandlords(int n);
     void decidedLandlord();
+    int cardcount[3] = {17, 17, 17};
     int landlord[3] = {0, 0, 0};
 
 };

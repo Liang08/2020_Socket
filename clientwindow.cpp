@@ -18,6 +18,7 @@ ClientWindow::ClientWindow(QString name_0, QWidget *parent) :
     connect(ui->pushButton, SIGNAL(clicked()), this, SLOT(connectHost()));
     connect(ui->pushButtonNo, SIGNAL(clicked()), this, SLOT(landLordNo()));
     connect(ui->pushButtonYes, SIGNAL(clicked()), this, SLOT(landLordYes()));
+    connect(ui->labelCard, SIGNAL(chooseCard(int)), this, SLOT(chooseCard(int)));
     if(Name == "Player_1"){
         id = 1;
         ui->labelPlayer1->setText("玩家2");
@@ -84,6 +85,12 @@ void ClientWindow::recvMessage(){
 
          //发牌
          case 2:
+             ui->stackedWidget->setCurrentIndex(0);
+             ui->pushButtonNo->setVisible(0);
+             ui->pushButtonYes->setVisible(0);
+             ui->pushButtonNoCard->setVisible(0);
+             ui->pushButtonOut->setVisible(0);
+             ui->labelMessage->setText("");
              for(int i = 0; i < 17; i ++){
                  player.playCards.push_back(Card(int(datas[i + 1])));
                  qDebug() << int(datas[i+1]);
@@ -131,7 +138,9 @@ void ClientWindow::recvMessage(){
                  }
              }
              break;
+
          case 5:
+         {
              if(Name == "Player_1"){
                  if(datas[1] == '0'){
                      ui->labelPlayerStatus->setText("农民");
@@ -172,20 +181,17 @@ void ClientWindow::recvMessage(){
                      isLandLord = 2;
                  }
              }
-             break;
-
-         case 6:
-         {
+             cardCount[isLandLord] = 20;
              if(isLandLord == id){
                  for(int i = 0; i < 3; i ++){
-                     player.playCards.push_back(Card(int(datas[i + 1])));
+                     player.playCards.push_back(Card(int(datas[i + 2])));
 
                  }
                  sort(player.begin(), player.end());
                  drawCard();
              }
              for(int i = 0; i < 3; i ++){
-                 landLordCard.playCards.push_back(Card(int(datas[i + 1])));
+                 landLordCard.playCards.push_back(Card(int(datas[i + 2])));
              }
              QString color, value;
              int num = 0;
@@ -242,6 +248,12 @@ void ClientWindow::recvMessage(){
              }
              break;
          }
+
+         case 6:
+             ui->pushButtonNoCard->setVisible(1);
+             ui->pushButtonOut->setVisible(1);
+             break;
+
          default:
              break;
          }
@@ -318,6 +330,66 @@ void ClientWindow::drawCard(){
 }
 
 
+void ClientWindow::drawCardAgain(){
+    QString color, value;
+    int num = 0;
+    int w = ui->labelCard->width();
+    int h = ui->labelCard->height();
+    for(auto a : player){
+        if(a.getValue() <= 7){
+            value = QString::number(a.getValue() + 3);
+        }else{
+            switch (a.getValue()){
+            case 8:
+                value = "J";
+                break;
+            case 9:
+                value = "Q";
+                break;
+            case 10:
+                value = "K";
+                break;
+            case 11:
+                value = "1";
+                break;
+            case 12:
+                value = "2";
+                break;
+            case 13:
+                color = "BLACK";
+                value = " JOKER";
+                break;
+            default:
+                color = "RED";
+                value = " JOKER";
+                break;
+            }
+        }
+        if (a.getValue() < 13){
+            switch (a.getColor()) {
+            case 0:
+                color = "C";
+                break;
+            case 1:
+                color = "D";
+                break;
+            case 2:
+                color = "H";
+                break;
+            default:
+                color = "S";
+                break;
+            }
+        }
+        labels[num]->move(30 * num, 20 - 20 * player.playCards[num].choosed);
+        if(player.playCards[num].exist == 0)
+            labels[num]->setVisible(0);
+        num ++;
+    }
+}
+
+
+
 void ClientWindow::landLordNo(){
     QByteArray arr;
     int struct_size, total_size;
@@ -353,4 +425,10 @@ void ClientWindow::landLordYes(){
     ui->labelPlayerStatus->setText("抢地主");
     ui->pushButtonNo->setVisible(0);
     ui->pushButtonYes->setVisible(0);
+}
+
+
+void ClientWindow::chooseCard(int n){
+    player.playCards[n].choosed = 1 - player.playCards[n].choosed;
+    drawCardAgain();
 }

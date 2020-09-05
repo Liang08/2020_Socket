@@ -30,12 +30,12 @@ public slots:
                            * 3：开始抢地主信号
                            * 4：个体抢地主结果
                            * 5：抢地主最终结果
-                           * 6：地主牌
-                           * 7：开始出牌信号
+                           * 6：开始出牌信号
                            */
     void writeMessage(QByteArray *arr);
     void landLordNo();
     void landLordYes();
+    void chooseCard(int i);
 
 private:
     Ui::ClientWindow *ui;
@@ -44,8 +44,10 @@ private:
     QTcpSocket *readWriteSocket;
     int isLandLord;
     int id;
+    int cardCount[3] = {17, 17, 17};
     PlayerCard landLordCard;
     void drawCard();
+    void drawCardAgain();
     QLabel* labels[20];
     QLabel* labelLandlord[3];
 
