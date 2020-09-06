@@ -11,6 +11,7 @@ public:
     std::vector<Card> playCards;
     auto begin(){return playCards.begin();}
     auto end(){return playCards.end();}
+    Card& operator[](int i);
 };
 
 #endif // PLAYERCARD_H

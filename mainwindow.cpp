@@ -28,6 +28,28 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->pushButtonNo, SIGNAL(clicked()), this, SLOT(landLordNo()));
     connect(ui->pushButtonYes, SIGNAL(clicked()), this, SLOT(landLordYes()));
     connect(ui->labelCard, SIGNAL(chooseCard(int)), this, SLOT(chooseCard(int)));
+    connect(ui->pushButtonOut, SIGNAL(clicked()), this, SLOT(giveOutCard()));
+    connect(ui->pushButtonNoCard, SIGNAL(clicked()), this, SLOT(noCard()));
+    connect(ui->pushButtonQuit, SIGNAL(clicked()), this, SLOT(quit()));
+    connect(ui->pushButtonAgain, SIGNAL(clicked()), this, SLOT(continuePlay()));
+
+    QString color, value;
+    int num = 0;
+    int w = ui->label->width();
+    int h = ui->label->height();
+    for(; num < 20;){
+        labelOut[num] = new QLabel(ui->label);
+        labelOut[num]->setPixmap(QPixmap(QString(":/png/cards/PADDING.png")).scaled(w,h,Qt::KeepAspectRatio));
+        labelOut[num]->move(20 * num, 0);
+        labelOut[num]->hide();
+        num ++;
+    }
+    for(int i = 0; i < 3; i ++){
+        labelLandlord[i] = new QLabel(ui->labelCard_0);
+        labelLandlord[i]->setPixmap(QPixmap(QString(":/png/cards/PADDING.png")).scaled(ui->labelCard_0->width(),ui->labelCard_0->height(),Qt::KeepAspectRatio));
+        labelLandlord[i]->move(60 * i, 0);
+        labelLandlord[i]->show();
+    }
 }
 
 MainWindow::~MainWindow()
@@ -38,6 +60,17 @@ MainWindow::~MainWindow()
 
 //生成初始牌面
 void MainWindow::init(){
+    ui->stackedWidget->setCurrentIndex(0);
+    memset(cardsClass, 0, sizeof (cardsClass));
+    memset(landlord, 0, sizeof (landlord));
+    memset(cardcount, 0, sizeof (cardcount));
+    for(int i = 0; i < 20; i ++){
+        labelOut[i]->hide();
+    }
+    card_0.clear();
+    for(int i = 0; i < 3; i ++){
+        card[i].clear();
+    }
     for(int i = 0; i < 54; i ++){
         card_0.push_back(i);
     }
@@ -61,6 +94,7 @@ void MainWindow::init(){
     ui->pushButtonOut->setVisible(0);
     ui->pushButtonNo->setVisible(0);
     ui->pushButtonYes->setVisible(0);
+    player.playCards.clear();
     for(int i = 0; i < 17; i ++){
         player.playCards.push_back(Card(card[0][i]));
     }
@@ -83,15 +117,14 @@ void MainWindow::init(){
     }
     writeMessageTo1(&arr[0]);
     tcpSocket_1->waitForBytesWritten();
+    QThread::msleep(100);
     writeMessageTo2(&arr[1]);
     tcpSocket_2->waitForBytesWritten();
+    QThread::msleep(100);
 
 
     for(int i = 0; i < 3; i ++){
-        labelLandlord[i] = new QLabel(ui->labelCard_0);
         labelLandlord[i]->setPixmap(QPixmap(QString(":/png/cards/PADDING.png")).scaled(ui->labelCard_0->width(),ui->labelCard_0->height(),Qt::KeepAspectRatio));
-        labelLandlord[i]->move(60 * i, 0);
-        labelLandlord[i]->show();
     }
     time= QTime::currentTime();
     qsrand(time.msec()+time.second()*1000);
@@ -134,7 +167,7 @@ void MainWindow::initServer(){
 
 void MainWindow::acceptConnection(){
     tcpSocket = this->tcpServer->nextPendingConnection();
-    if(tcpSocket->peerPort() == 8880){
+    if(tcpSocket->peerPort() == 9000){
         this->tcpSocket_1 = tcpSocket;
         connect(tcpSocket_1, SIGNAL(readyRead()), this , SLOT(recvMessageFrom1()));
     }else{
@@ -143,7 +176,6 @@ void MainWindow::acceptConnection(){
     }
     connectNum ++;
     if(connectNum == 2){
-        ui->stackedWidget->setCurrentIndex(0);
 //        QByteArray arr;
 //        int struct_size, total_size;
 //        struct_size = 1;
@@ -162,16 +194,15 @@ void MainWindow::acceptConnection(){
 
 void MainWindow::writeMessageTo1(QByteArray *array){
     tcpSocket_1->write(array->data());
+    QThread::msleep(100);
     tcpSocket_1->waitForBytesWritten();
-    QThread::msleep(50);
 }
 
 
 void MainWindow::writeMessageTo2(QByteArray *array){
      tcpSocket_2->write(array->data());
-     tcpSocket_2->waitForBytesWritten();
-     QThread::msleep(50);
-
+     QThread::msleep(100);
+     tcpSocket_1->waitForBytesWritten();
 }
 
 
@@ -192,7 +223,6 @@ void MainWindow::recvMessageFrom1(){
              break;
          if(total_length < total_bytes + 2)
              break;
-         qDebug() << "ok";
          datas.clear();
          for (int i = 0; i < struct_count; i ++) {
              datas.push_back(m_buffer_car[i + 2]);
@@ -253,24 +283,78 @@ void MainWindow::recvMessageFrom1(){
              }
              else{
                  receivedCards.clear();
+                 receivedValue.clear();
                  for (int i = 1; i < struct_count; i ++) {
                      receivedCards.push_back(int(datas[i]));
                      receivedValue.push_back(checkAmount(datas[i]));
                  }
-                 flag = judgeCard(receivedCards, receivedCards.size());
+                 flag = judgeCard(receivedValue, receivedValue.size());
              }
              if(flag == 0){
-                 QByteArray arr;
+                 QByteArray arr_2;
                  int struct_size, total_size;
                  struct_size = 1;
-                 arr.append(7);
-                 total_size = arr.size();
+                 arr_2.append(7);
+                 total_size = arr_2.size();
                  QByteArray data;
                  data.append(total_size).append(struct_size);
-                 data.append(arr[0]);
+                 data.append(arr_2[0]);
                  writeMessageTo1(&data);
-             }else{
-
+             }else if(struct_count != 1){
+                 cardcount[1] -= receivedCards.size();
+                 if(cardcount[1] == 0){
+                     win(1);
+                 }
+                 ui->labelPlayerCard1->setNum(cardcount[1]);
+                 outCard.playCards.clear();
+                 for(auto a : receivedCards){
+                     outCard.playCards.push_back(Card(a));
+                 }
+                 drawOutCard();
+                 QByteArray arr_2;
+                 int struct_size, total_size;
+                 struct_size = 2;
+                 arr_2.append(8);
+                 arr_2.append(1);
+                 for(auto a : receivedCards){
+                     arr_2.append(a);
+                     struct_size ++;
+                 }
+                 total_size = arr_2.size();
+                 QByteArray data;
+                 data.append(total_size).append(struct_size);
+                 for(auto a : arr_2){
+                     data.append(a);
+                 }
+                 writeMessageTo1(&data);
+                 writeMessageTo2(&data);
+                 lastGiven = 1;
+                 giveCard(2);
+             }
+             else{
+                 QByteArray arr_2;
+                 int struct_size, total_size;
+                 struct_size = 2;
+                 arr_2.append(8);
+                 arr_2.append(1);
+                 total_size = arr_2.size();
+                 QByteArray data;
+                 data.append(total_size).append(struct_size);
+                 for(auto a : arr_2){
+                     data.append(a);
+                 }
+                 writeMessageTo1(&data);
+                 writeMessageTo2(&data);
+                 if(lastGiven == 2){
+                     cardsClass[0] = cardsClass[1] = cardsClass[2] = 0;
+                 }
+                 giveCard(2);
+             }
+         }
+         else if(datas[0] == 3){
+             playAgain ++;
+             if(playAgain == 3){
+                 init();
              }
          }
      }
@@ -294,7 +378,6 @@ void MainWindow::recvMessageFrom2(){
              break;
          if(total_length < total_bytes + 2)
              break;
-         qDebug() << "ok";
          datas.clear();
          for (int i = 0; i < struct_count; i ++) {
              datas.push_back(m_buffer_car[i + 2]);
@@ -346,6 +429,7 @@ void MainWindow::recvMessageFrom2(){
             }
             break;
         }
+
          else if(datas[0] == 2){
              int flag = 1;
              if(struct_count == 1){
@@ -354,22 +438,78 @@ void MainWindow::recvMessageFrom2(){
              }
              else{
                  receivedCards.clear();
+                 receivedValue.clear();
                  for (int i = 1; i < struct_count; i ++) {
                      receivedCards.push_back(int(datas[i]));
                      receivedValue.push_back(checkAmount(datas[i]));
                  }
-                 flag = judgeCard(receivedCards, receivedCards.size());
+                 flag = judgeCard(receivedValue, receivedValue.size());
              }
              if(flag == 0){
-                 QByteArray arr;
+                 QByteArray arr_2;
                  int struct_size, total_size;
                  struct_size = 1;
-                 arr.append(7);
-                 total_size = arr.size();
+                 arr_2.append(7);
+                 total_size = arr_2.size();
                  QByteArray data;
                  data.append(total_size).append(struct_size);
-                 data.append(arr[0]);
+                 data.append(arr_2[0]);
                  writeMessageTo2(&data);
+             }else if(struct_count != 1){
+                 cardcount[2] -= receivedCards.size();
+                 if(cardcount[2] == 0){
+                     win(2);
+                 }
+                 ui->labelPlayerCard2->setNum(cardcount[2]);
+                 outCard.playCards.clear();
+                 for(auto a : receivedCards){
+                     outCard.playCards.push_back(Card(a));
+                 }
+                 drawOutCard();
+                 QByteArray arr_2;
+                 int struct_size, total_size;
+                 struct_size = 2;
+                 arr_2.append(8);
+                 arr_2.append(2);
+                 for(auto a : receivedCards){
+                     arr_2.append(a);
+                     struct_size ++;
+                 }
+                 total_size = arr_2.size();
+                 QByteArray data;
+                 data.append(total_size).append(struct_size);
+                 for(auto a : arr_2){
+                     data.append(a);
+                 }
+                 writeMessageTo1(&data);
+                 writeMessageTo2(&data);
+                 lastGiven = 2;
+                 giveCard(0);
+             }
+             else{
+                 QByteArray arr_2;
+                 int struct_size, total_size;
+                 struct_size = 2;
+                 arr_2.append(8);
+                 arr_2.append(2);
+                 total_size = arr_2.size();
+                 QByteArray data;
+                 data.append(total_size).append(struct_size);
+                 for(auto a : arr_2){
+                     data.append(a);
+                 }
+                 writeMessageTo1(&data);
+                 writeMessageTo2(&data);
+                 if(lastGiven == 0){
+                     cardsClass[0] = cardsClass[1] = cardsClass[2] = 0;
+                 }
+                 giveCard(0);
+             }
+         }
+         else if(datas[0] == 3){
+             playAgain ++;
+             if(playAgain == 3){
+                 init();
              }
          }
      }
@@ -429,9 +569,15 @@ void MainWindow::drawCard(){
         }
         labels[num] = new QLabel(ui->labelCard);
         labels[num]->setPixmap(QPixmap(QString(":/png/cards/%1%2.png").arg(color).arg(value)).scaled(w,h-60,Qt::KeepAspectRatio));
-        labels[num]->move(30 * num, 20 - 20 * player.playCards[num].choosed);
+        labels[num]->move(30 * num, 20);
         labels[num]->show();
         num ++;
+    }
+    for (; num < 20; num ++) {
+        labels[num] = new QLabel(ui->labelCard);
+        labels[num]->setPixmap(QPixmap(QString(":/png/cards/PADDING.png")).scaled(w,h-60,Qt::KeepAspectRatio));
+        labels[num]->move(30 * num, 20);
+        labels[num]->hide();
     }
 }
 
@@ -487,31 +633,37 @@ void MainWindow::drawCardAgain(){
                 break;
             }
         }
+        labels[num]->hide();
+        labels[num]->setPixmap(QPixmap(QString(":/png/cards/%1%2.png").arg(color).arg(value)).scaled(w,h-60,Qt::KeepAspectRatio));
+        labels[num]->move(30 * num, 20);
         labels[num]->move(30 * num, 20 - 20 * player.playCards[num].choosed);
         if(player.playCards[num].exist == 0)
-            labels[num]->setVisible(0);
+            labels[num]->hide();
+        else
+            labels[num]->show();
         num ++;
     }
 }
 
-
 void MainWindow::landLordNo(){
     landlord[0] = 2;
     ui->labelPlayerStatus->setText("不抢");
-    QByteArray arr;
+    QByteArray arr_2;
     int struct_size, total_size;
     struct_size = 3;
-    arr.append(4);
-    arr.append('0');
-    arr.append(2);
-    total_size = arr.size();
+    arr_2.append(4);
+    arr_2.append('0');
+    arr_2.append(2);
+    total_size = arr_2.size();
     QByteArray data;
     data.append(total_size).append(struct_size);
     for(int i = 0; i < struct_size; i ++){
-        data.append(arr[i]);
+        data.append(arr_2[i]);
     }
     writeMessageTo1(&data);
+    QThread::msleep(50);
     writeMessageTo2(&data);
+    QThread::msleep(50);
     ui->pushButtonNo->setVisible(0);
     ui->pushButtonYes->setVisible(0);
     if(landlord[1] == 0){
@@ -546,17 +698,17 @@ void MainWindow::landLordNo(){
 void MainWindow::landLordYes(){
     landlord[0] = 1;
     ui->labelPlayerStatus->setText("抢地主");
-    QByteArray arr;
+    QByteArray arr_2;
     int struct_size, total_size;
     struct_size = 3;
-    arr.append(4);
-    arr.append('0');
-    arr.append(1);
-    total_size = arr.size();
+    arr_2.append(4);
+    arr_2.append('0');
+    arr_2.append(1);
+    total_size = arr_2.size();
     QByteArray data;
     data.append(total_size).append(struct_size);
     for(int i = 0; i < struct_size; i ++){
-        data.append(arr[i]);
+        data.append(arr_2[i]);
     }
     writeMessageTo1(&data);
     writeMessageTo2(&data);
@@ -647,34 +799,39 @@ void MainWindow::decidedLandlord(){
         num ++;
     }
     cardcount[isLandLord] = 20;
-    QByteArray arr;
+    ui->labelPlayerCard1->setNum(cardcount[1]);
+    ui->labelPlayerCard2->setNum(cardcount[2]);
+    QByteArray arr_2;
     int struct_size, total_size;
     if(isLandLord == 0){
         for(int i = 0; i < 3; i ++){
             player.playCards.push_back(Card(card_0[i]));
         }
         sort(player.begin(), player.end());
-        drawCard();
+        drawCardAgain();
         struct_size = 25;
-        arr.append(5);
-        arr.append('0');
+        arr_2.append(5);
+        arr_2.append('0');
+        cardcount[0] = 20;
     }else if(isLandLord == 1){
         struct_size = 5;
-        arr.append(5);
-        arr.append(1);
+        arr_2.append(5);
+        arr_2.append(1);
+        cardcount[1] = 20;
     }else{
         struct_size = 5;
-        arr.append(5);
-        arr.append(2);
+        arr_2.append(5);
+        arr_2.append(2);
+        cardcount[2] = 20;
     }
     for(int i = 0; i < 3; i ++){
-        arr.append(card_0[i]);
+        arr_2.append(card_0[i]);
     }
-    total_size = arr.size();
+    total_size = arr_2.size();
     QByteArray data;
     data.append(total_size).append(struct_size);
     for(int i = 0; i < struct_size; i ++){
-        data.append(arr[i]);
+        data.append(arr_2[i]);
     }
     writeMessageTo1(&data);
     QThread::msleep(20);
@@ -696,14 +853,17 @@ void MainWindow::gameStart(){
 
 
 void MainWindow::giveCard(int n){
-    QByteArray arr;
+    if(lastGiven == n){
+        memset(cardsClass, 0, sizeof(cardsClass));
+    }
+    QByteArray arr_2;
     int struct_size, total_size;
     struct_size = 1;
-    arr.append(6);
-    total_size = arr.size();
+    arr_2.append(6);
+    total_size = arr_2.size();
     QByteArray data;
     data.append(total_size).append(struct_size);
-    data.append(arr[0]);
+    data.append(arr_2[0]);
     if(n == 1)
         writeMessageTo1(&data);
     else if(n == 2)
@@ -813,6 +973,7 @@ int MainWindow::judgeCard(std::vector<int>card, int num){
             n[2] = 0;
         }
     }
+    qDebug() << n[0] << ' ' << n[1] << ' ' << n[2];
     if((n[0] == cardsClass[0] && n[1] == cardsClass[1] && n[2] > cardsClass[2]) || (cardsClass[0] == 0 && cardsClass[1] == 0 && cardsClass[2] == 0 && n[0] != 10) || (n[0] == 4 && n[1] == 0 && (cardsClass[0] != 4 || cardsClass[1] != 0 || cardsClass[2] < n[2]))){
         cardsClass[0] = n[0];
         cardsClass[1] = n[1];
@@ -830,4 +991,186 @@ int MainWindow::checkAmount(int card){
     }
     else
         return 14;
+}
+
+
+void MainWindow::drawOutCard(){
+    QString color, value;
+    int num = 0;
+    for(int i = 0; i < 20; i ++){
+        labelOut[i]->hide();
+    }
+    int w = ui->label->width();
+    int h = ui->label->height();
+    for(auto a : outCard){
+        if(a.getValue() <= 7){
+            value = QString::number(a.getValue() + 3);
+        }else{
+            switch (a.getValue()){
+            case 8:
+                value = "J";
+                break;
+            case 9:
+                value = "Q";
+                break;
+            case 10:
+                value = "K";
+                break;
+            case 11:
+                value = "1";
+                break;
+            case 12:
+                value = "2";
+                break;
+            case 13:
+                color = "BLACK";
+                value = " JOKER";
+                break;
+            default:
+                color = "RED";
+                value = " JOKER";
+                break;
+            }
+        }
+        if (a.getValue() < 13){
+            switch (a.getColor()) {
+            case 0:
+                color = "C";
+                break;
+            case 1:
+                color = "D";
+                break;
+            case 2:
+                color = "H";
+                break;
+            default:
+                color = "S";
+                break;
+            }
+        }
+        labelOut[num]->setPixmap(QPixmap(QString(":/png/cards/%1%2.png").arg(color).arg(value)).scaled(w,h,Qt::KeepAspectRatio));
+        labelOut[num]->move(20 * num, 0);
+        labelOut[num]->show();
+        num ++;
+    }
+}
+
+
+void MainWindow::giveOutCard(){
+    std::vector<int> out, value;
+    for(auto a : player){
+        if(a.choosed == 1 && a.exist == 1){
+            out.push_back(a.getNum());
+        }
+    }
+    for(auto a : out){
+        value.push_back(checkAmount(a));
+    }
+    int flag = judgeCard(value, value.size());
+    if(flag == 0){
+        ui->labelMessage->setText("非法出牌");
+        giveCard(0);
+    }
+    else{
+        cardcount[0] -= out.size();
+        if(cardcount[0] == 0){
+            win(0);
+        }
+        outCard.playCards.clear();
+        for(auto a : out){
+            outCard.playCards.push_back(Card(a));
+            player[a].exist = 0;
+        }
+        drawCardAgain();
+        drawOutCard();
+        QByteArray arr_2;
+        int struct_size, total_size;
+        struct_size = 2;
+        arr_2.append(8);
+        arr_2.append('0');
+        for(auto a : out){
+            arr_2.append(a);
+            struct_size ++;
+        }
+        total_size = arr_2.size();
+        QByteArray data;
+        data.append(total_size).append(struct_size);
+        for(auto a : arr_2){
+            data.append(a);
+        }
+        writeMessageTo1(&data);
+        writeMessageTo2(&data);
+        ui->pushButtonOut->setVisible(0);
+        ui->pushButtonNoCard->setVisible(0);
+        lastGiven = 0;
+        giveCard(1);
+    }
+}
+
+
+void MainWindow::noCard(){
+    if(cardsClass[0] == 0)
+        ui->labelMessage->setText("非法出牌");
+    else{
+        QByteArray arr_2;
+        int struct_size, total_size;
+        struct_size = 2;
+        arr_2.append(8);
+        arr_2.append('0');
+        total_size = arr_2.size();
+        QByteArray data;
+        data.append(total_size).append(struct_size);
+        for(auto a : arr_2){
+            data.append(a);
+        }
+        writeMessageTo1(&data);
+        writeMessageTo2(&data);
+        ui->pushButtonOut->setVisible(0);
+        ui->pushButtonNoCard->setVisible(0);
+        if(lastGiven == 1){
+            cardsClass[0] = cardsClass[1] = cardsClass[2] = 0;
+        }
+        giveCard(1);
+    }
+}
+
+
+void MainWindow::win(int n){
+    ui->stackedWidget->setCurrentIndex(2);
+    QByteArray arr_2;
+    int struct_size, total_size;
+    struct_size = 2;
+    arr_2.append(9);
+    arr_2.append(n);
+    total_size = arr_2.size();
+    QByteArray data;
+    data.append(total_size).append(struct_size);
+    for(auto a : arr_2){
+        data.append(a);
+    }
+    writeMessageTo1(&data);
+    writeMessageTo2(&data);
+    if(n == 0){
+        ui->labelWin->setText("You Win");
+    }else if(isLandLord == 0){
+        ui->labelWin->setText("You Lose");
+    }else if(isLandLord == n){
+        ui->labelWin->setText("You Lose");
+    }else{
+        ui->labelWin->setText("You Win");
+    }
+}
+
+
+void MainWindow::quit(){
+    tcpSocket_1->disconnectFromHost();
+    tcpSocket_2->disconnectFromHost();
+}
+
+
+void MainWindow::continuePlay(){
+    playAgain ++;
+    if(playAgain == 3){
+        init();
+    }
 }

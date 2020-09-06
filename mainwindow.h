@@ -30,6 +30,10 @@ public slots:
     void landLordNo();
     void landLordYes();
     void chooseCard(int n);
+    void giveOutCard();
+    void noCard();
+    void quit();
+    void continuePlay();
 
 
 private:
@@ -42,14 +46,19 @@ private:
     QByteArray m_buffer_car;
     int isLandLord;
     PlayerCard landLordCard;
+    PlayerCard outCard;
     QLabel* labelLandlord[3];
+    QLabel* labelOut[20];
     std::vector<int> card[3];                //card[i]  player_i的牌    
     std::vector<int> card_0;                 //地主牌
     std::vector<int> receivedCards;
     std::vector<int> receivedValue;
     int cardsClass[3] = {0, 0, 0};
+    int lastGiven;                           //上一次出牌的玩家
+    int nowGiven;
     void drawCard();
     void drawCardAgain();
+    void drawOutCard();
     void gameStart();
     void giveCard(int n);
     int judgeCard(std::vector<int> n, int num);
@@ -58,6 +67,8 @@ private:
     int cardcount[3] = {17, 17, 17};
     int landlord[3] = {0, 0, 0};
     int checkAmount(int card);
+    void win(int n);
+    int playAgain = 0;
 
 };
 #endif // MAINWINDOW_H

@@ -38,6 +38,8 @@ public slots:
     void chooseCard(int i);
     void giveCard();
     void noCard();
+    void quit();
+    void continuePlay();
 
 private:
     Ui::ClientWindow *ui;
@@ -48,11 +50,13 @@ private:
     int id;
     int cardCount[3] = {17, 17, 17};
     PlayerCard landLordCard;
+    PlayerCard outCard;
     void drawCard();
     void drawCardAgain();
+    void drawOutCard();
     QLabel* labels[20];
     QLabel* labelLandlord[3];
-
+    QLabel* labelOut[20];
 };
 
 #endif // CLIENTWINDOW_H
